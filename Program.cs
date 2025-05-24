@@ -60,6 +60,16 @@ namespace K_NNalgorytm
             return Znormalizowane;
         }
 
+        public static double Euklidesowa(double[] Probka1, double[] Probka2)
+        {
+            double odleglosc=0;
+            for (int i =0; i<Probka1.Length-1; i++)
+            {
+                odleglosc += Math.Pow(Probka1[i] - Probka2[i],2);
+            }
+            odleglosc = Math.Sqrt(odleglosc);
+            return odleglosc;
+        }
 
 
         static void Main(string[] args)
@@ -86,6 +96,22 @@ namespace K_NNalgorytm
                 }
                 Console.WriteLine();
             }
+
+            int K = 3;
+
+            for (int i = 0; i<znormalizowane.Length; i++)
+            {
+                double[] probkaTestowa = znormalizowane[i];
+                for (int j = 0; j < znormalizowane.Length; j++)
+                {
+                    if (znormalizowane[j]==probkaTestowa)
+                    {
+                        continue;
+                    }
+
+                }
+            }
+
             Console.ReadKey();
         }
         
