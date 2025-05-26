@@ -81,6 +81,8 @@ namespace K_NNalgorytm
             return odleglosc;
         }
 
+        
+
         static void Main(string[] args)
         {
             
@@ -109,7 +111,7 @@ namespace K_NNalgorytm
             Metryka m = Euklidesowa;
             double wynik = m(znormalizowane[0], znormalizowane[1]);
             Console.WriteLine("Metryka testowa wynik: "+wynik);
-            int K = 5;
+            int K = 8;
 
             for (int i = 0; i<znormalizowane.Length; i++)
             {
@@ -139,6 +141,26 @@ namespace K_NNalgorytm
                     najblizszeSasiady[k] = indexSasiada;
                 }
 
+                var grupy = odleglosci
+                    .Take(K)
+                    .Select(x => znormalizowane[x.index].Last())
+                    .GroupBy(x => x)
+                    .Select(g => new { Klasa = g.Key, Liczba = g.Count() })
+                    .OrderByDescending(x => x.Liczba)
+                    .ThenBy(x => x.Klasa)
+                    .ToList();
+
+                double najczestszaKlasa;
+                if (grupy.Count > 1 && grupy[0].Liczba == grupy[1].Liczba)//jesli remis to bedzie klasa 0
+                {
+                    najczestszaKlasa = double.NaN;
+                    Console.WriteLine("Brak jednoznacznej decyzji (remis)");
+                }
+                else
+                {
+                    najczestszaKlasa = grupy.First().Klasa;
+                    Console.WriteLine($"Najczęściej występująca klasa: {najczestszaKlasa}");
+                }
 
             }
 
