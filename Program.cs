@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace K_NNalgorytm
 {
+    delegate double Metryka(double[] Probka1, double[] Probka2);
     internal class Program
     {
         public static double[][] PobierzDane(string sciezka)
@@ -70,10 +71,19 @@ namespace K_NNalgorytm
             odleglosc = Math.Sqrt(odleglosc);
             return odleglosc;
         }
-
+        public static double Manhatan(double[] Probka1, double[] Probka2)
+        {
+            double odleglosc = 0;
+            for (int i = 0; i < Probka1.Length - 1; i++)
+            {
+                odleglosc += Math.Abs(Probka1[i] - Probka2[i]);
+            }
+            return odleglosc;
+        }
 
         static void Main(string[] args)
         {
+            
             BazaProbek = PobierzDane("dane.txt");
             foreach(double[] element in BazaProbek)
             {
@@ -96,20 +106,40 @@ namespace K_NNalgorytm
                 }
                 Console.WriteLine();
             }
-
-            int K = 3;
+            Metryka m = Euklidesowa;
+            double wynik = m(znormalizowane[0], znormalizowane[1]);
+            Console.WriteLine("Metryka testowa wynik: "+wynik);
+            int K = 5;
 
             for (int i = 0; i<znormalizowane.Length; i++)
             {
                 double[] probkaTestowa = znormalizowane[i];
+                List<(int index, double odleglosc)> odleglosci = new List<(int, double)>(); // odleglosci przechowywyane w listach, bo można je łatwo sortować :)
+
                 for (int j = 0; j < znormalizowane.Length; j++)
                 {
-                    if (znormalizowane[j]==probkaTestowa)
+                    if (znormalizowane[j] == probkaTestowa)//probka testowa pomijana w klasfikacji
                     {
                         continue;
                     }
 
+                    double odleglosc = Euklidesowa(probkaTestowa, znormalizowane[j]);
+                    odleglosci.Add((j, odleglosc));
                 }
+
+                
+                odleglosci = odleglosci.OrderBy(x => x.odleglosc).ToList();//rosnąco, po odległości - bo łatwo wyświetlić i skasyfikować zaczynając od indeksu 0 
+                double[] najblizszeSasiady = new double[K];
+                Console.WriteLine("\nProbka "+i+" : ");
+                for (int k = 0; k < K; k++)
+                {
+                    int indexSasiada = odleglosci[k].index;
+                    double odlegloscSasiada = odleglosci[k].odleglosc;
+                    Console.WriteLine("Njabliższy sasiad " + (k + 1) + ": indeks " + indexSasiada + ", odleglosc = " + odlegloscSasiada + ", klasa = " + znormalizowane[indexSasiada][znormalizowane[indexSasiada].Length - 1]);
+                    najblizszeSasiady[k] = indexSasiada;
+                }
+
+
             }
 
             Console.ReadKey();
