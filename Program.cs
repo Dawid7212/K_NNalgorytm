@@ -61,6 +61,25 @@ namespace K_NNalgorytm
             return Znormalizowane;
         }
 
+        public static double ObliczanieDokladnosci(double[][] bazaProbek, double[] noweKlasy)
+        {
+            int poprawne = 0;
+
+            for (int i = 0; i < noweKlasy.Length; i++)
+            {
+                double prawdziwaKlasa = bazaProbek[i][bazaProbek[i].Length - 1];
+                double przewidzianaKlasa = noweKlasy[i];
+
+                if (!double.IsNaN(przewidzianaKlasa) && przewidzianaKlasa == prawdziwaKlasa)
+                {
+                    poprawne += 1;
+                }
+            }
+            double dokladnosc = poprawne / (double)noweKlasy.Length * 100;
+            return dokladnosc;
+        }
+
+
         public static double Euklidesowa(double[] Probka1, double[] Probka2)
         {
             double odleglosc=0;
@@ -81,7 +100,52 @@ namespace K_NNalgorytm
             return odleglosc;
         }
 
-        
+        public static double KNN(double[][] znormalizowane, int K, double[] probkaTestowa, int i)
+        {
+            
+            List<(int index, double odleglosc)> odleglosci = new List<(int, double)>(); // odleglosci przechowywyane w listach, bo można je łatwo sortować :)
+
+            for (int j = 0; j < znormalizowane.Length; j++)
+            {
+                if (znormalizowane[j] == probkaTestowa)//probka testowa pomijana w klasfikacji
+                {
+                    continue;
+                }
+                double odleglosc = Euklidesowa(probkaTestowa, znormalizowane[j]);
+                odleglosci.Add((j, odleglosc));
+            }
+            odleglosci = odleglosci.OrderBy(x => x.odleglosc).ToList();//rosnąco, po odległości - bo łatwo wyświetlić i skasyfikować zaczynając od indeksu 0 
+            Console.WriteLine("\nProbka " + i + " : ");
+            for (int k = 0; k < K; k++)
+            {
+                int indexSasiada = odleglosci[k].index;
+                double odlegloscSasiada = odleglosci[k].odleglosc;
+                Console.WriteLine("Njabliższy sasiad " + (k + 1) + ": indeks " + indexSasiada + ", odleglosc = " + odlegloscSasiada + ", klasa = " + znormalizowane[indexSasiada][znormalizowane[indexSasiada].Length - 1]);
+            }
+            
+            var grupy = odleglosci
+                .Take(K) //pobiera k-pierwszch elementow z listy
+                .Select(x => znormalizowane[x.index].Last())//dla kazdego z nich pobiera klase, Last() pobiera ostatni element z wiersza/probki (no czyli klase), czyli x to klasa  
+                .GroupBy(x => x)// grupowanie sasiadow wg ich klasy, powstaja grupy probek, każda grupa dla innej klasy
+                .Select(g => new { numerKlasy = g.Key, LiczbaWystapienKlasy = g.Count() })//dla kazdej grupy tworzony jest anonimowy obiekt z dwoma polami: neKlasy i LiczbaWystopienKlasy
+                .OrderByDescending(x => x.LiczbaWystapienKlasy)//sortowanie grupy malejąco według liczby sąsiadów w danej klasie, czyli najczesciej wystepujaca klasa idzie na przod listy
+                .ThenBy(x => x.numerKlasy)//a jak dwie klasy maja tyle samo wystapien (no remis), to sortuje je rosnąco po numerze klasy, czyli pierwsza będzie klasa o niższym numerze
+                .ToList();
+
+            double najczestszaKlasa;
+            if (grupy.Count > 1 && grupy[0].LiczbaWystapienKlasy == grupy[1].LiczbaWystapienKlasy)//jesli remis to bedzie oznaczenie Nan
+            {
+                najczestszaKlasa = double.NaN;
+                Console.WriteLine("Remis, czyli: "+najczestszaKlasa);
+            }
+            else
+            {
+                najczestszaKlasa = grupy.First().numerKlasy; // dzieki OrderByDescending na poczatek klasy idzie najliczniejsza klasa
+                Console.WriteLine("Najczęściej występująca klasa: "+najczestszaKlasa);
+            }
+
+            return najczestszaKlasa;
+        }
 
         static void Main(string[] args)
         {
@@ -112,58 +176,16 @@ namespace K_NNalgorytm
             double wynik = m(znormalizowane[0], znormalizowane[1]);
             Console.WriteLine("Metryka testowa wynik: "+wynik);
             int K = 8;
-
+            double[] NoweKlasy = new double[BazaProbek.Length]; 
             for (int i = 0; i<znormalizowane.Length; i++)
             {
                 double[] probkaTestowa = znormalizowane[i];
-                List<(int index, double odleglosc)> odleglosci = new List<(int, double)>(); // odleglosci przechowywyane w listach, bo można je łatwo sortować :)
+                NoweKlasy[i] = KNN(znormalizowane,K, probkaTestowa,i);
 
-                for (int j = 0; j < znormalizowane.Length; j++)
-                {
-                    if (znormalizowane[j] == probkaTestowa)//probka testowa pomijana w klasfikacji
-                    {
-                        continue;
-                    }
-
-                    double odleglosc = Euklidesowa(probkaTestowa, znormalizowane[j]);
-                    odleglosci.Add((j, odleglosc));
-                }
-
-                
-                odleglosci = odleglosci.OrderBy(x => x.odleglosc).ToList();//rosnąco, po odległości - bo łatwo wyświetlić i skasyfikować zaczynając od indeksu 0 
-                double[] najblizszeSasiady = new double[K];
-                Console.WriteLine("\nProbka "+i+" : ");
-                for (int k = 0; k < K; k++)
-                {
-                    int indexSasiada = odleglosci[k].index;
-                    double odlegloscSasiada = odleglosci[k].odleglosc;
-                    Console.WriteLine("Njabliższy sasiad " + (k + 1) + ": indeks " + indexSasiada + ", odleglosc = " + odlegloscSasiada + ", klasa = " + znormalizowane[indexSasiada][znormalizowane[indexSasiada].Length - 1]);
-                    najblizszeSasiady[k] = indexSasiada;
-                }
-
-                var grupy = odleglosci
-                    .Take(K)
-                    .Select(x => znormalizowane[x.index].Last())
-                    .GroupBy(x => x)
-                    .Select(g => new { Klasa = g.Key, Liczba = g.Count() })
-                    .OrderByDescending(x => x.Liczba)
-                    .ThenBy(x => x.Klasa)
-                    .ToList();
-
-                double najczestszaKlasa;
-                if (grupy.Count > 1 && grupy[0].Liczba == grupy[1].Liczba)//jesli remis to bedzie klasa 0
-                {
-                    najczestszaKlasa = double.NaN;
-                    Console.WriteLine("Brak jednoznacznej decyzji (remis)");
-                }
-                else
-                {
-                    najczestszaKlasa = grupy.First().Klasa;
-                    Console.WriteLine($"Najczęściej występująca klasa: {najczestszaKlasa}");
-                }
 
             }
-
+            double dokladnosc = ObliczanieDokladnosci(BazaProbek, NoweKlasy);
+            Console.WriteLine("dokladnosc: "+dokladnosc+"%");
             Console.ReadKey();
         }
         
