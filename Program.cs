@@ -99,8 +99,38 @@ namespace K_NNalgorytm
             }
             return odleglosc;
         }
+        public static double Czebyszewa(double[] Probka1, double[] Probka2)
+        {
+            double max = 0;
+            for (int i = 0; i < Probka1.Length; i++)
+            {
+                double aktualniePrzetwarzany = Math.Abs(Probka1[i] - Probka2[i]);
+                if (aktualniePrzetwarzany > max)
+                    max = aktualniePrzetwarzany;
+            }
+            return max;
+        }
+        public static double Minkowskiego(double[] Probka1, double[] Probka2)
+        {
+            double p = 3; // jak p > 2 to kładzie większy nacisk na większe różnice
+            double suma = 0;
+            for (int i = 0; i < Probka1.Length; i++)
+            {
+                suma += Math.Pow(Math.Abs(Probka1[i] - Probka2[i]), p);
+            }
+            return Math.Pow(suma, 1.0 / p);
+        }
+        public static double ZLogarytmem(double[] Probka1, double[] Probka2)
+        {
+            double suma = 0;
+            for (int i = 0; i < Probka1.Length; i++)
+            {
+                suma += Math.Abs(Math.Log(Probka1[i]) - Math.Log(Probka2[i]));
+            }
+            return suma;
+        }
 
-        public static double KNN(double[][] znormalizowane, int K, double[] probkaTestowa, int i)
+        public static double KNN(double[][] znormalizowane, int K, double[] probkaTestowa, int i, Metryka M)
         {
             
             List<(int index, double odleglosc)> odleglosci = new List<(int, double)>(); // odleglosci przechowywyane w listach, bo można je łatwo sortować :)
@@ -111,16 +141,16 @@ namespace K_NNalgorytm
                 {
                     continue;
                 }
-                double odleglosc = Euklidesowa(probkaTestowa, znormalizowane[j]);
+                double odleglosc = M(probkaTestowa, znormalizowane[j]);
                 odleglosci.Add((j, odleglosc));
             }
             odleglosci = odleglosci.OrderBy(x => x.odleglosc).ToList();//rosnąco, po odległości - bo łatwo wyświetlić i skasyfikować zaczynając od indeksu 0 
-            Console.WriteLine("\nProbka " + i + " : ");
+           // Console.WriteLine("\nProbka " + i + " : ");
             for (int k = 0; k < K; k++)
             {
                 int indexSasiada = odleglosci[k].index;
                 double odlegloscSasiada = odleglosci[k].odleglosc;
-                Console.WriteLine("Njabliższy sasiad " + (k + 1) + ": indeks " + indexSasiada + ", odleglosc = " + odlegloscSasiada + ", klasa = " + znormalizowane[indexSasiada][znormalizowane[indexSasiada].Length - 1]);
+                //Console.WriteLine("Njabliższy sasiad " + (k + 1) + ": indeks " + indexSasiada + ", odleglosc = " + odlegloscSasiada + ", klasa = " + znormalizowane[indexSasiada][znormalizowane[indexSasiada].Length - 1]);
             }
             
             var grupy = odleglosci
@@ -136,35 +166,19 @@ namespace K_NNalgorytm
             if (grupy.Count > 1 && grupy[0].LiczbaWystapienKlasy == grupy[1].LiczbaWystapienKlasy)//jesli remis to bedzie oznaczenie Nan
             {
                 najczestszaKlasa = double.NaN;
-                Console.WriteLine("Remis, czyli: "+najczestszaKlasa);
+                //Console.WriteLine("Remis, czyli: "+najczestszaKlasa);
             }
             else
             {
                 najczestszaKlasa = grupy.First().numerKlasy; // dzieki OrderByDescending na poczatek klasy idzie najliczniejsza klasa
-                Console.WriteLine("Najczęściej występująca klasa: "+najczestszaKlasa);
+              //  Console.WriteLine("Najczęściej występująca klasa: "+najczestszaKlasa);
             }
 
             return najczestszaKlasa;
         }
-
-        static void Main(string[] args)
+        public static void WyswietlZawartosc(double[][] Baza)
         {
-            
-            BazaProbek = PobierzDane("dane.txt");
-            foreach(double[] element in BazaProbek)
-            {
-                foreach(double value in element)
-                {
-                    Console.Write(value+"  ");
-                }
-                Console.WriteLine();
-            }
-
-            Console.WriteLine();
-
-
-            double[][] znormalizowane = Normalizacja(BazaProbek);
-            foreach (double[] element in znormalizowane)
+            foreach (double[] element in Baza)
             {
                 foreach (double value in element)
                 {
@@ -172,20 +186,82 @@ namespace K_NNalgorytm
                 }
                 Console.WriteLine();
             }
-            Metryka m = Euklidesowa;
-            double wynik = m(znormalizowane[0], znormalizowane[1]);
-            Console.WriteLine("Metryka testowa wynik: "+wynik);
-            int K = 8;
-            double[] NoweKlasy = new double[BazaProbek.Length]; 
-            for (int i = 0; i<znormalizowane.Length; i++)
+
+            Console.WriteLine();
+        }
+
+        static void Main(string[] args)
+        {
+            
+            BazaProbek = PobierzDane("dane.txt");
+            //WyswietlZawartosc(BazaProbek);
+
+
+            double[][] znormalizowane = Normalizacja(BazaProbek);
+            //WyswietlZawartosc(znormalizowane);
+            int jakaMetryka = 1;
+            int K = 0;
+            Metryka M = Euklidesowa;
+            while (jakaMetryka !=0)
             {
-                double[] probkaTestowa = znormalizowane[i];
-                NoweKlasy[i] = KNN(znormalizowane,K, probkaTestowa,i);
+                Console.WriteLine("Wybierz metrykę i zatwierdz enterem:");
+                Console.WriteLine("1) metryka Euklidesowa");
+                Console.WriteLine("2) metryka Manhatan");
+                Console.WriteLine("3) metryka Czebyszewa");
+                Console.WriteLine("4) metryka Minkowskiego");
+                Console.WriteLine("5) metryka Z logarytmem");
+                Console.WriteLine("0) zakończ działanie programu");
+                jakaMetryka = int.Parse(Console.ReadLine());
+                Console.WriteLine("Podaj parametr K i zatwierdz enterem:");
+                K = int.Parse(Console.ReadLine());           
+                if (jakaMetryka == 1)
+                {
+                    M = Euklidesowa;
+                }
+                else if (jakaMetryka == 2)
+                {
+                    M = Manhatan;
+                }
+                else if (jakaMetryka == 3)
+                {
+                    M = Czebyszewa;
+                }
+                else if (jakaMetryka == 4)
+                {
+                    M = Minkowskiego;
+                }
+                else if (jakaMetryka == 5)
+                {
+                    M = ZLogarytmem;
+                }
+                else if (jakaMetryka == 0)
+                {
+                    continue;
+                }
+                else
+                {
+                    Console.WriteLine("Wprowadzono zły numer metryki, kliknij enter aby przejsc dalej");
+                    Console.ReadKey();
+                    continue;
+                }
+                //var metryki = typeof(Metryka).GetMethods().Where(m =>
+                //m.ReturnType == typeof(double) && m.GetParameters().Length == 2 && m.GetParameters()[0].ParameterType == typeof(double[])
+                //).ToArray();//nazwa m jest dowolna
+                //Metryka N = (Metryka)Delegate.CreateDelegate(typeof(N));
+                //double wynik = M(znormalizowane[0], znormalizowane[1]);
+                //Console.WriteLine("Metryka testowa wynik: "+wynik);
+                double[] NoweKlasy = new double[BazaProbek.Length];
+                for (int i = 0; i < znormalizowane.Length; i++)
+                {
+                    double[] probkaTestowa = znormalizowane[i];
+                    NoweKlasy[i] = KNN(znormalizowane, K, probkaTestowa, i, M);
 
 
+                }
+                double dokladnosc = ObliczanieDokladnosci(BazaProbek, NoweKlasy);
+                Console.WriteLine("dokladnosc: " + dokladnosc + "%\n");
             }
-            double dokladnosc = ObliczanieDokladnosci(BazaProbek, NoweKlasy);
-            Console.WriteLine("dokladnosc: "+dokladnosc+"%");
+            
             Console.ReadKey();
         }
         
