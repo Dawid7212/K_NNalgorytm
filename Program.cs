@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -137,7 +138,7 @@ namespace K_NNalgorytm
 
             for (int j = 0; j < znormalizowane.Length; j++)
             {
-                if (znormalizowane[j] == probkaTestowa)//probka testowa pomijana w klasfikacji
+                if (i == j)//probka testowa pomijana w klasfikacji
                 {
                     continue;
                 }
@@ -245,8 +246,10 @@ namespace K_NNalgorytm
                     continue;
                 }
                 //var metryki = typeof(Metryka).GetMethods().Where(m =>
-                //m.ReturnType == typeof(double) && m.GetParameters().Length == 2 && m.GetParameters()[0].ParameterType == typeof(double[])
+               // m.ReturnType == typeof(double) && m.GetParameters().Length == 2 && m.GetParameters()[0].ParameterType == typeof(double[])
                 //).ToArray();//nazwa m jest dowolna
+                //comboBox1.DataSource = metryki;
+                //comboBox1.DisplayMember = "Name";
                 //Metryka N = (Metryka)Delegate.CreateDelegate(typeof(N));
                 //double wynik = M(znormalizowane[0], znormalizowane[1]);
                 //Console.WriteLine("Metryka testowa wynik: "+wynik);
@@ -263,8 +266,11 @@ namespace K_NNalgorytm
             }
             
             Console.ReadKey();
+            //Wnioski:
+            //Najskuteczniejszymi metrykami są Minkowskiego dla p = 3 i Czebyszewa, bo obie dają dokładność na poziomie 100 % dla k w zakresie 1 - 97
+            //kolejną skuteczną metryką jest "Z Logarytmem" bo dlae dokładność na poziomie 99,33 % dla k = 13 i 16
+            //nieco mniej skutecznymi metrykami są Manhatan dająca dokł 95,33 % dla k = 3 i Euklidesowa dająca dokł 96,66 % dla k = 7
         }
-        
         public static double[][] BazaProbek = new double[][]
         {           
         };
